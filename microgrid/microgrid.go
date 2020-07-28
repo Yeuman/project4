@@ -58,14 +58,28 @@ func (t *Microgrid) Init(ctx contractapi.TransactionContextInterface, MGInstance
   return nil
 }
 
-func (t *Microgrid) CalculateLoadDemand(ctx contractapi.TransactionContextInterface) error {
+func CalculateLoadDemand() int {
 
   //Calculate load demand here
 
+  return 0
+}
+
+func CalculateTotalCost(MGs [] MG) error {
+
+  //Evaluate the expected value of the cost objective function by utilizing the incentive contract chart and UT output
+
+  T := 0 //Replace 0 with actual time
+  MAX_HOUR:= 0 //Replace 0 with actual time termination criterion
+  if (T == MAX_HOUR) {
+     //Calculate total cost
+  } else {
+    CalculateMaxGenerationPower(MGs)
+  }
   return nil
 }
 
-func (t *Microgrid) CalculateMaxGenerationPower(ctx contractapi.TransactionContextInterface, MGs [] MG) error {
+func CalculateMaxGenerationPower(MGs [] MG) error {
 
   for i := 0; i < len(MGs) ; i++ {
     //Solve Optimization Problem for each MG
@@ -76,22 +90,23 @@ func (t *Microgrid) CalculateMaxGenerationPower(ctx contractapi.TransactionConte
 
     //Calculate sum of max generation power
     maxGenerationPower := 0  // Replace 0 with actual calculation
-    loadDemand := 0          //Replace 0 with value derived from CalculateLoadDemand
+    loadDemand := CalculateLoadDemand()          //Replace 0 with value derived from CalculateLoadDemand
     if  (maxGenerationPower > loadDemand) {
       //Calculate extra power
       //Solve optimization problem
-      //Evaluate the expected value of the cost objective function by utilizing the incentive contract chart and UT output
+      CalculateTotalCost(MGs)
+    } else {
+      // Calculate the extra power for each generator to be shared with other areas
+      // Evaluate the generation strategy (constraints) for each area and the power mismatch by blockchain.
 
-      T := 0 //Replace 0 with actual time
-      MAX_HOUR:= 0 //Replace 0 with actual time termination criterion
-      if (T == MAX_HOUR) {
-         //Calculate total cost
-      } else {
-        CalculateMaxGenerationPower(MGs)
+      balanced := false
+      for balanced == false {
+        //Utilize blockchain to solve the optimal dispatch with the minimal cost of purchase strategy based on the pricing strategy (buy-now price) described in Table III
+        // balanced = Check the priority of the MG(s) that need(s) a transaction and add the highest priority block to the trade chain.
+        CalculateTotalCost(MGs)
       }
     }
   }
-
   return nil
 }
 

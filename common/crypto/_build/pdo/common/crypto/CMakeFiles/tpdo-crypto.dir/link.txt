@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../libtpdo-crypto.a  CMakeFiles/tpdo-crypto.dir/verify_ias_report/ias-certificates.cpp.o CMakeFiles/tpdo-crypto.dir/crypto_utils.cpp.o CMakeFiles/tpdo-crypto.dir/pkenc_private_key.cpp.o CMakeFiles/tpdo-crypto.dir/pkenc_public_key.cpp.o CMakeFiles/tpdo-crypto.dir/sig_private_key.cpp.o CMakeFiles/tpdo-crypto.dir/sig_public_key.cpp.o CMakeFiles/tpdo-crypto.dir/skenc.cpp.o CMakeFiles/tpdo-crypto.dir/verify_ias_report/verify-report.cpp.o
+/usr/bin/ranlib ../../../libtpdo-crypto.a

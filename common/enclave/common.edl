@@ -1,0 +1,26 @@
+/*
+ * Copyright IBM Corp. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+enclave {
+    include "sgx_trts.h"
+    include "sgx_tcrypto.h"
+
+    trusted {
+        public int ecall_init(void);
+
+        public int ecall_create_report(
+                [in] const sgx_target_info_t *target_info,
+                [out] sgx_report_t *report,
+                [out, size=64] uint8_t *pubkey);
+
+        public int ecall_get_pk([out, size=64] uint8_t *pubkey);
+    };
+
+    untrusted {
+        void ocall_print_string([in, string] const char *str);
+    };
+
+};

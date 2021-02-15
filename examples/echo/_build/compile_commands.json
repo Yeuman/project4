@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/echo/_build",
+  "command": "/usr/bin/c++  -DENCLAVE_CODE -Denclave_EXPORTS -I/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/echo -I/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/ecc_enclave/enclave/../../common -I/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/ecc_enclave/enclave/../../common/json -I/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/ecc_enclave/enclave/../../ecc_enclave/enclave -I/opt/intel/sgxsdk/include -I/opt/intel/sgxsdk/include/tlibc -I/opt/intel/sgxsdk/include/libcxx   -m64 -O2 -nostdinc -fno-builtin -fvisibility=hidden -fpie -fstack-protector -std=c++11 -nostdinc++ -fPIC   -o CMakeFiles/enclave.dir/echo_cc.cpp.o -c /usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/echo/echo_cc.cpp",
+  "file": "/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/echo/echo_cc.cpp"
+}
+]

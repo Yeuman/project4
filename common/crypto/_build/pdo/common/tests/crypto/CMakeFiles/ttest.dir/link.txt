@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/ttest.dir/trusted/app/TestApp.cpp.o CMakeFiles/ttest.dir/TestEnclave_u.c.o  -o ../../../../tests/ttest -Wl,-L,/opt/intel/sgxsdk/lib64 -Wl,-L,/opt/intel/sgxssl/lib64 -Wl,-L,/opt/intel/sgxssl/lib64/release -lsgx_urts -lsgx_usgxssl -lpthread ../../../../libupdo-crypto-adapt.a 

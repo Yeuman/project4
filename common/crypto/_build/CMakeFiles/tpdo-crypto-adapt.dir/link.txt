@@ -1,0 +1,2 @@
+/usr/bin/ar qc libtpdo-crypto-adapt.a  CMakeFiles/tpdo-crypto-adapt.dir/pdo/common/c11_support.cpp.o CMakeFiles/tpdo-crypto-adapt.dir/pdo/common/hex_string.cpp.o CMakeFiles/tpdo-crypto-adapt.dir/pdo/common/log.cpp.o CMakeFiles/tpdo-crypto-adapt.dir/pdo-types.cpp.o CMakeFiles/tpdo-crypto-adapt.dir/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/common/base64/base64.cpp.o
+/usr/bin/ranlib libtpdo-crypto-adapt.a

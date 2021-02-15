@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/utest.dir/untrusted/TestUntrusted.cpp.o CMakeFiles/utest.dir/testCrypto.cpp.o  -o ../../../../tests/utest -Wl,--start-group ../../../../libupdo-crypto-adapt.a -lssl -lcrypto ../../../../libupdo-crypto.a -Wl,--end-group 

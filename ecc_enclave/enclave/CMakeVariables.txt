@@ -1,0 +1,8 @@
+# Copyright 2019 Intel Corporation
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set(SHIM_LIB_NAME shim)
+
+set(T_PDO_CRYPTO_LIB_NAME tpdo-crypto)

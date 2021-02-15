@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+.DS_Store
+Thumbs.db
+db.json
+*.log
+node_modules/
+public/img/users
+.deploy*/
+src/_drafts

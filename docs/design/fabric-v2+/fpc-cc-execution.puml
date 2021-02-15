@@ -1,0 +1,98 @@
+/'
+    Copyright 2020 Intel Corporation
+    Copyright IBM Corp. All Rights Reserved.
+
+    SPDX-License-Identifier: Apache-2.0
+'/
+
+@startuml
+
+'- force wrapping of longer text
+'skinparam wrapWidth 400
+
+!pragma teoz true
+
+hide footbox
+title Foot Box removed
+
+title Fabric Private Chaincode - Chaincode execution
+
+participant "FPC_stub_enclave" as Enclave1 order 10 #99FF99
+participant "FPC_chaincode" as Chaincode order 30 #99FF99
+
+participant "FPC_stub" as ECC1 order 31
+
+database "Peer_state" as storage1 order 40
+participant "Ledger_enclave" as TLCC1 order 41 #99FF99
+
+activate Enclave1
+
+ref over Enclave1, TLCC1
+    see fpc-cc-invocation.puml
+end
+
+
+Enclave1 -> Chaincode : invoke (args, CTX)
+activate Chaincode
+note right
+    FPC_stub_enclave calls invoke of the FPC_chaincode,
+    which implements the actual application logic.
+
+    Context (CTX) is used to retrieve state and the
+    corresponding integrity-metadata from the same view.
+end note
+
+loop
+  note over Chaincode
+    This loop denotes the application logic as it
+    may perform multiple getState and putState operations.
+  end note
+
+  alt getState
+    Chaincode -> Enclave1 ++ : getState(key, CTX)
+    Enclave1 -> Enclave1 : update readset
+    Enclave1 -> ECC1 ++ : getState(key, CTX)
+    ECC1 -> storage1 ++ : getState(key, CTX)
+    return value_enc
+    ECC1 -> TLCC1 ++ : getMetadata(key, CTX)
+    return integrity-metadata
+    return value_enc, integrity-metadata
+    Enclave1 -> Enclave1 : check value_enc using integrity-data
+
+    note right: also check that integrity-metadata comes from Ledger_enclave
+    Enclave1 -> Enclave1 : value <- decrypt value_enc with SEK
+    Enclave1 -> Enclave1 : update readset
+    return value
+    note right
+        Application logic can now use value for
+        some computation; the value is in clear
+        and validated with the help of Ledger_enclave.
+    end note
+
+
+  else putState
+    Chaincode -> Enclave1 ++ : putState(key, value, CTX)
+    Enclave1 -> Enclave1 : value_enc <- encrypt value with SEK
+    Enclave1 -> ECC1 ++: putState(key, value_enc, CTX)
+    note right
+        NOTE that with putState operations, only encrypted
+        data leaves the enclave.
+    end note
+    ECC1 -> ECC1 : putState(key, value_enc, CTX)
+    return
+
+    Enclave1 -> Enclave1 : update writeset
+    return
+
+  end
+end
+
+Chaincode -> Chaincode : compute some result
+note right
+    The application logic may also return some result
+end note
+
+Chaincode --> Enclave1 : return result
+deactivate Chaincode
+
+@enduml

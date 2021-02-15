@@ -1,0 +1,3 @@
+/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/helloworld/_build/CMakeFiles/rebuild_cache.dir
+/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/helloworld/_build/CMakeFiles/enclave.dir
+/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/examples/helloworld/_build/CMakeFiles/edit_cache.dir

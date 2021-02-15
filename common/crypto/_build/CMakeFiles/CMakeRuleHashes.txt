@@ -1,0 +1,5 @@
+# Hashes of file build rules.
+3dcc0c2e024509f629ad552c2bd0540f ../pdo/common/crypto/verify_ias_report/ias-certificates.cpp
+48dd2740483cb305d2da6267933654ca pdo/common/crypto/CMakeFiles/generate-ias-files
+1e11e4705ece4063dc60947e473e5d61 pdo/common/tests/crypto/TestEnclave_u.h
+45075574c3c58475a31075862f66a4a6 pdo/common/tests/crypto/trusted/enclave/TestEnclave_t.h

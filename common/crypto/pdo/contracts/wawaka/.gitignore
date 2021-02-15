@@ -1,0 +1,5 @@
+*.b64
+*.wasm
+*.map
+*.wast
+build

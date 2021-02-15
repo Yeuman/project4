@@ -1,0 +1,33 @@
+Start testing: Dec 18 13:35 CST
+----------------------------------------------------------
+1/2 Testing: utest
+1/2 Test: utest
+Command: "/usr/bin/env" "LD_LIBRARY_PATH=:" "./utest"
+Directory: /usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/common/crypto/_build/tests
+"utest" start time: Dec 18 13:35 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.22 sec
+----------------------------------------------------------
+Test Failed.
+"utest" end time: Dec 18 13:35 CST
+"utest" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: ttest
+2/2 Test: ttest
+Command: "/usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/common/crypto/_build/tests/ttest"
+Directory: /usr/local/go/bin/src/github.com/hyperledger-labs/fabric-private-chaincode/common/crypto/_build/tests
+"ttest" start time: Dec 18 13:35 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.30 sec
+----------------------------------------------------------
+Test Failed.
+"ttest" end time: Dec 18 13:35 CST
+"ttest" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Dec 18 13:35 CST

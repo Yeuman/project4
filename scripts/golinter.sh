@@ -1,0 +1,1 @@
+../../../hyperledger/fabric/scripts/golinter.sh

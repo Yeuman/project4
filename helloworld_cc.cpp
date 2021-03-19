@@ -13,7 +13,7 @@
 
 #define OK "OK"
 #define NOT_FOUND "Bid not found"
-#define RSA_MOD_SIZE 384 //hardcode n size to be 384
+#define RSA_MOD_SIZE 128 //hardcode n size to be 384
 #define RSA_E_SIZE 4 //hardcode e size to be 4
 
 #define MAX_VALUE_SIZE 1024
@@ -33,6 +33,8 @@ std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)
 	uint32_t little_endian_e = 999;
     	uint8_t *le_n = NULL;
     	void *key = NULL;
+	void *public_key = NULL;
+	void *private_key = NULL;
     	size_t temp_encrypted_size = 0;
 
         //create public exponent value represented in little endian
@@ -43,24 +45,74 @@ std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)
             le_n[i] = 65;//create little endian n
         }
 
-	if (sgx_create_rsa_pub1_key(RSA_MOD_SIZE, RSA_E_SIZE, (const unsigned char *)le_n,
-            (const unsigned char *)(&little_endian_e), &key) != SGX_SUCCESS) {
-        }
+	//if (sgx_create_rsa_pub1_key(RSA_MOD_SIZE, RSA_E_SIZE, (const unsigned char *)le_n,
+        //    (const unsigned char *)(&little_endian_e), &key) != SGX_SUCCESS) {
+        //}
 	
-	unsigned char *p_n, *p_d, *p_e, *p_p, *p_q, *p_dmp1, *p_dmq1, *p_iqmp = new unsigned char();
-	*p_n = 60, *p_d = 60, *p_e = 60, *p_p = 60, *p_q = 60, *p_dmp1 = 60, *p_dmq1 = 60, *p_iqmp = 60;
+	unsigned char p_n, p_d, p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp; 
+	p_e = 65537;
 
-	if (sgx_create_rsa_key_pair(RSA_MOD_SIZE, RSA_E_SIZE, p_n, p_d, p_e,
-	p_p, p_q, p_dmp1,
-	p_dmq1, p_iqmp) != SGX_SUCCESS){
+	std::string s = "Test";
+
+	if (sgx_create_rsa_key_pair(RSA_MOD_SIZE, RSA_E_SIZE, &p_n, &p_d, &p_e, &p_p, &p_q, &p_dmp1, &p_dmq1, &p_iqmp) == SGX_SUCCESS){ 
+		s = s + "Created key pair";
 	}
 
-	if(sgx_create_rsa_priv1_key(RSA_MOD_SIZE, RSA_E_SIZE, sizeof(p_d), p_n, p_e,
-        p_d, &key) != SGX_SUCCESS) {
+	if(sgx_create_rsa_pub1_key(RSA_MOD_SIZE, RSA_E_SIZE, &p_n, &p_e, &public_key) == SGX_SUCCESS) {
+		s = s + "Reached Public Key phase";
+	}
+
+	if(sgx_create_rsa_priv2_key(RSA_MOD_SIZE, RSA_E_SIZE, &p_e, &p_p, &p_q, &p_dmp1, &p_dmq1, &p_iqmp, &private_key) == SGX_SUCCESS) {
+		s = s + "Reached Private Key phase";
 	}	
 
-	std::string *sp = static_cast<std::string*>(key);
-	std::string s = *sp;
+	unsigned char pout_data = NULL;
+	uint8_t *encrypted_ppid, *decrypted_ppid;
+	size_t pout_len = 0;
+
+	const unsigned char pin_data = 65537;
+	const size_t pin_len = sizeof(&pin_data);
+
+	if(sgx_rsa_pub_encrypt_sha256(public_key, NULL, &pout_len, &pin_data, pin_len) == SGX_SUCCESS) {
+		s = s + "Encrypted";
+	}
+
+	if(sgx_rsa_pub_encrypt_sha256(public_key, encrypted_ppid, &pout_len, &pin_data, pin_len) == SGX_SUCCESS) {
+                s = s + "Encrypted Part 2";
+        }
+
+	size_t decrypted_len = 0;
+
+	if(sgx_rsa_priv_decrypt_sha256(private_key, NULL, &decrypted_len, encrypted_ppid, pout_len) == SGX_SUCCESS) {
+		s = s + "Decrypted";
+	}
+
+	if(sgx_rsa_priv_decrypt_sha256(private_key, decrypted_ppid, &decrypted_len, encrypted_ppid, pout_len) == SGX_SUCCESS) {
+                s = s + "Decrypted Part 2";
+        }
+
+
+	uint8_t dst[384];
+	size_t dst_len = 384;
+	unsigned char *src = new unsigned char();
+	*src = 72; 
+	size_t src_len = sizeof(src);
+	//if(sgx_rsa_pub_encrypt_sha256(public_key, dst, &dst_len, src, src_len) != SGX_SUCCESS) {
+	//}
+
+	uint8_t unenc_src[384];
+        size_t unenc_src_len = 384;
+
+	//if(sgx_rsa_priv_decrypt_sha256(private_key, unenc_src, &unenc_src_len, dst, dst_len) != SGX_SUCCESS) {
+	//}
+
+
+	//std::string *sp = static_cast<std::string*>(key);
+
+	if(unenc_src == src) {
+		s = "Finally";
+	}
+	
 
 	return s;
 }

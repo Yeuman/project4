@@ -228,12 +228,11 @@ int invoke(
     get_func_and_params(function_name, params, ctx);
     std::string result;
 
-    if (function_name == "storeBid")
+    if (function_name == "decryptAndStoreBid")
     {
-	std::string::size_type sz; 
+	std::string value = params[1]; 
         std::string user_name = params[0];
-        int value = std::stoi (params[1], &sz);
-        result = storeBid(user_name, value, ctx);
+        result = decryptAndStoreBid(user_name, value, ctx);
     }
     else if (function_name == "retrieveBid")
     {
@@ -244,15 +243,27 @@ int invoke(
     {
         result = retrieveAuctionResult(ctx);
     }
-    else if (function_name == "storePublicKey")
+    else if (function_name == "encrypter")
     {
-	int user_public_key = std::stoi(params[1]);
-	std::string user_name = params[0];
-	result = storePublicKey(user_name, user_public_key, ctx);
+	std::string data = params[0];
+	result = encrypter( data, ctx);
     }
     else if (function_name == "retrieveChaincodePublicKey")
     {
 	result = retrieveChaincodePublicKey(ctx);
+    }
+    else if (function_name == "createUserPublicPrivateKey")
+    {
+	    std::string user_name = params[0];
+	    result = createUserPublicPrivateKey(user_name, ctx);
+    }
+    else if (function_name == "createChaincodePublicPrivateKey")
+    {
+		result = createChaincodePublicPrivateKey(ctx);
+    }
+    else if (function_name == "encryptionSimulation")
+    {
+	result = encryptionSimulation(ctx);    
     }
     else
     {

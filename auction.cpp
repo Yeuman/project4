@@ -17,22 +17,70 @@
 #define RSA_E_SIZE 4 //hardcode e size to be 4
 
 #define MAX_VALUE_SIZE 1024
-int public_key = 9;
-int private_key = 5;
 int user_count = 0;
 std::map<int, std::string> usernames;
+std::map<std::string, std::string> userPublicKeys;
+void *chaincode_public_key = NULL;
+void *chaincode_private_key = NULL;
 
-
-std::string storePublicKey(std::string user_name, int value, shim_ctx_ptr_t ctx)
+//Will store the public key and return private key for user
+std::string  createUserPublicPrivateKey(std::string user_name, shim_ctx_ptr_t ctx)	
 {
-	put_state(user_name.c_str(), (uint8_t*)&value, sizeof(value), ctx);
+	
+	void *public_key = NULL;
+	void *private_key = NULL;
+	
+	unsigned char p_n[256], p_d[256], p_p[256], p_q[256], p_dmp1[256], p_dmq1[256], p_iqmp[256]; 
+	long p_e = 65537;
+
+	std::string s = "Test";
+
+	if (sgx_create_rsa_key_pair(RSA_MOD_SIZE, sizeof(p_e), p_n, p_d, (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp) == SGX_SUCCESS){ 
+		s = s + "Created key pair";
+	}
+
+	if(sgx_create_rsa_pub1_key(RSA_MOD_SIZE, sizeof(p_e), p_n, (unsigned char*)&p_e, &public_key) == SGX_SUCCESS) {
+		s = s + "Reached Public Key phase";
+	}
+
+	if(sgx_create_rsa_priv2_key(RSA_MOD_SIZE, sizeof(p_e), (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp, &private_key) == SGX_SUCCESS) {
+		s = s + "Reached Private Key phase";
+	}
+	
+	userPublicKeys[user_name] = public_key;
+	
+	return private_key;
 }
 
+// To be called once at the beginning. Creates chaincode public private key.
+std::string  createChaincodePublicPrivateKey(shim_ctx_ptr_t ctx)	
+{
+	unsigned char p_n[256], p_d[256], p_p[256], p_q[256], p_dmp1[256], p_dmq1[256], p_iqmp[256]; 
+	long p_e = 65537;
+
+	std::string s = "Test";
+
+	if (sgx_create_rsa_key_pair(RSA_MOD_SIZE, sizeof(p_e), p_n, p_d, (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp) == SGX_SUCCESS){ 
+		s = s + "Created key pair";
+	}
+
+	if(sgx_create_rsa_pub1_key(RSA_MOD_SIZE, sizeof(p_e), p_n, (unsigned char*)&p_e, &chaincode_public_key) == SGX_SUCCESS) {
+		s = s + "Reached Public Key phase";
+	}
+
+	if(sgx_create_rsa_priv2_key(RSA_MOD_SIZE, sizeof(p_e), (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp, &chaincode_private_key) == SGX_SUCCESS) {
+		s = s + "Reached Private Key phase";
+	}
+}
+
+// To be called to retrieve the chaincode public key
 std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)	
 {
+	return chaincode_public_key;
 }
 
 
+//Example encryption simulation
 std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
 {
 	void *public_key = NULL;

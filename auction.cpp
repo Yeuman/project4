@@ -138,52 +138,38 @@ std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
 	return s;
 }
 
-int unsign(int signed_value, std::string user_name, shim_ctx_ptr_t ctx)
-{
-	int user_public_key;
-        uint32_t bid_bytes_len = -1;
-	get_state(user_name.c_str(), (uint8_t*)&user_public_key, sizeof(user_public_key), &bid_bytes_len, ctx);
+std::string decryptAndStoreBid(std::string user_name, std::string pin_data, shim_ctx_ptr_t ctx) {
+	size_t decrypted_len = 0;
+
+	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, NULL, &decrypted_len, pout_data, sizeof(pout_data)) == SGX_SUCCESS) {
+		s = s + "Decrypted";
+	}
+
+	unsigned char decrypted_pout_data[decrypted_len];
+
+	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, decrypted_pout_data, &decrypted_len, pout_data, sizeof(pout_data)) == SGX_SUCCESS) {
+                s = s + "Decrypted Part 2";
+        }
 	
-	int unsigned_value = signed_value/user_public_key;
-
-	return unsigned_value;
+	put_state(user_name.c_str(), (uint8_t*)&decrypted_pout_data, sizeof(decrypted_pout_data), ctx);
 }
 
-int sign(int encrypted_value)
-{
-	return encrypted_value* private_key;
+// Function to encrypt the bid for the user
+std::string encrypter(std::string pin_data, shim_ctx_ptr_t ctx) {
+	
+	if(sgx_rsa_pub_encrypt_sha256(chaincode_public_key, NULL, &pout_len, (unsigned char *)pin_data, strlen(pin_data)) == SGX_SUCCESS) {
+		
+	}
+
+	unsigned char pout_data[pout_len];
+	
+        if(sgx_rsa_pub_encrypt_sha256(chaincode_public_key, pout_data, &pout_len, (unsigned char *)pin_data, strlen(pin_data)) == SGX_SUCCESS) {
+                
+        }
+	return pout_data
 }
 
-int decrypter(int encrypted_value)
-{
-	return encrypted_value/private_key;
-}
 
-int encrypter(int value, std::string user_name, shim_ctx_ptr_t ctx) {
-        int user_public_key;
-	uint32_t bid_bytes_len = -1;
-	get_state(user_name.c_str(), (uint8_t*)&user_public_key, sizeof(user_public_key), &bid_bytes_len, ctx);
-	return value*user_public_key;
-}
-
-//  Add bid_name, value to ledger
-std::string storeBid(std::string user_name, int value, shim_ctx_ptr_t ctx)
-{
-    LOG_DEBUG("+++ storeBid:  +++");
-    //First unsign the value. Confirm the user identity
-    int encrypted_value;
-    encrypted_value = unsign(value, user_name, ctx);
-
-    //Decrypt the unsigned value
-    int decrypted_value;
-    decrypted_value = decrypter(encrypted_value);
-
-    //Store on the ledger
-    put_state(user_name.c_str(), (uint8_t*)&decrypted_value, sizeof(decrypted_value), ctx);
-
-    usernames[user_count] = user_name;
-    return "SUCCESS in storing the value";
-}
 
 std::string retrieveBid(std::string bid_name, shim_ctx_ptr_t ctx)
 {

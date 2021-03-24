@@ -28,26 +28,15 @@ std::string storePublicKey(std::string user_name, int value, shim_ctx_ptr_t ctx)
 	put_state(user_name.c_str(), (uint8_t*)&value, sizeof(value), ctx);
 }
 
-std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)
+std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)	
 {
-	uint32_t little_endian_e = 999;
-    	uint8_t *le_n = NULL;
-    	void *key = NULL;
+}
+
+
+std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
+{
 	void *public_key = NULL;
 	void *private_key = NULL;
-    	size_t temp_encrypted_size = 0;
-
-        //create public exponent value represented in little endian
-        //
-
-        le_n = (uint8_t *)malloc(RSA_MOD_SIZE);
-        for (size_t i = 0; i<RSA_MOD_SIZE; i++) {
-            le_n[i] = 65;//create little endian n
-        }
-
-	//if (sgx_create_rsa_pub1_key(RSA_MOD_SIZE, RSA_E_SIZE, (const unsigned char *)le_n,
-        //    (const unsigned char *)(&little_endian_e), &key) != SGX_SUCCESS) {
-        //}
 	
 	unsigned char p_n[256], p_d[256], p_p[256], p_q[256], p_dmp1[256], p_dmq1[256], p_iqmp[256]; 
 	long p_e = 65537;
@@ -97,29 +86,6 @@ std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)
 		s.append(1, decrypted_pout_data[c]);
 		++c;
 	}
-
-
-	uint8_t dst[384];
-	size_t dst_len = 384;
-	unsigned char *src = new unsigned char();
-	*src = 72; 
-	size_t src_len = sizeof(src);
-	//if(sgx_rsa_pub_encrypt_sha256(public_key, dst, &dst_len, src, src_len) != SGX_SUCCESS) {
-	//}
-
-	uint8_t unenc_src[384];
-        size_t unenc_src_len = 384;
-
-	//if(sgx_rsa_priv_decrypt_sha256(private_key, unenc_src, &unenc_src_len, dst, dst_len) != SGX_SUCCESS) {
-	//}
-
-
-	//std::string *sp = static_cast<std::string*>(key);
-
-	if(unenc_src == src) {
-		s = "Finally";
-	}
-	
 
 	return s;
 }

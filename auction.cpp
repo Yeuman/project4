@@ -165,6 +165,7 @@ std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
 }
 
 std::string decryptAndStoreBid(std::string user_name, std::string pin_data, shim_ctx_ptr_t ctx) {
+	//Placeholder for pin_data
 	//char data[pin_data.length()];
 
 	//int i;
@@ -187,7 +188,13 @@ std::string decryptAndStoreBid(std::string user_name, std::string pin_data, shim
         	s = s + "Decrypted Part 2";
 	}
 	
-	//put_state(user_name.c_str(), (uint8_t*)&decrypted_pout_data, sizeof(decrypted_pout_data), ctx);
+	std::string auction_bid = "";
+	int x = 0;
+	while(decrypted_pout_data[x] != NULL) {
+                auction_bid.append(1, decrypted_pout_data[x]);
+                ++x;
+        }
+	put_state(user_name.c_str(), (uint8_t*)auction_bid.c_str(), auction_bid.size(), ctx);
 	int c = 0;
         while(decrypted_pout_data[c] != NULL) {
                 s.append(1, decrypted_pout_data[c]);
@@ -233,14 +240,16 @@ std::string encrypter(std::string pin_data, shim_ctx_ptr_t ctx) {
 
 std::string retrieveBid(std::string bid_name, shim_ctx_ptr_t ctx)
 {
-	std::string result;
     	LOG_DEBUG(" +++ retrieveBid +++");
 	uint32_t bid_bytes_len = -1;
-	int unencrypted_object;
+	char _unencrypted_bid[128];
+	const char* unencrypted_bid;
 
-	get_state(bid_name.c_str(), (uint8_t*)&unencrypted_object, sizeof(unencrypted_object), &bid_bytes_len, ctx);
+	get_state(bid_name.c_str(), (uint8_t*)_unencrypted_bid, sizeof(_unencrypted_bid) - 1, &bid_bytes_len, ctx);
 
-	result = std::to_string(unencrypted_object);
+	_unencrypted_bid[bid_bytes_len + 1] = '\0';
+	unencrypted_bid = _unencrypted_bid;
+	std::string result(unencrypted_bid);
 	return result;
 }
 

@@ -195,6 +195,8 @@ std::string decryptAndStoreBid(std::string user_name, std::string pin_data, shim
                 ++x;
         }
 	put_state(user_name.c_str(), (uint8_t*)auction_bid.c_str(), auction_bid.size(), ctx);
+	usernames[user_count] = user_name;
+	user_count++;
 	int c = 0;
         while(decrypted_pout_data[c] != NULL) {
                 s.append(1, decrypted_pout_data[c]);
@@ -250,6 +252,8 @@ std::string retrieveBid(std::string bid_name, shim_ctx_ptr_t ctx)
 	_unencrypted_bid[bid_bytes_len + 1] = '\0';
 	unencrypted_bid = _unencrypted_bid;
 	std::string result(unencrypted_bid);
+	int length = result.length();
+	result = result.substr(0, length-1);
 	return result;
 }
 
@@ -264,13 +268,19 @@ std::string retrieveAuctionResult(shim_ctx_ptr_t ctx)
     int max = 0;
     std::string username;
     //Retrieve all the bids
-    for (int i = 0; i < usernames.size(); i++) {
-	int value;
+    for (int i = 0; i < user_count; i++) {
+	char _value[128];
 	uint32_t bid_bytes_len = -1;	
-    	get_state(usernames[i].c_str(), (uint8_t*)&value, sizeof(value), &bid_bytes_len, ctx);
-	values[i] = value;
-	if (value>max) {
-		max = value;
+    	get_state(usernames[i].c_str(), (uint8_t*)_value, sizeof(_value) - 1, &bid_bytes_len, ctx);
+	const char* value;
+	_value[bid_bytes_len + 1] = '\0';
+	value = _value;
+	std::string result(value);
+	int length = result.length();
+	result = result.substr(0, length-1);
+	int bid = stoi(result);
+	if (bid>max) {
+		max = bid;
 		username = usernames[i];
 	}
     }
@@ -280,7 +290,7 @@ std::string retrieveAuctionResult(shim_ctx_ptr_t ctx)
 
     //int signed_value = sign(encrypted_value);
 
-    return result;
+    return username;
 }
 
 // implements chaincode logic for invoke

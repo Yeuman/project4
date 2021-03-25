@@ -266,7 +266,9 @@ std::string retrieveAuctionResult(shim_ctx_ptr_t ctx)
     uint32_t bid_bytes_len = -1;
     int values[5];
     int max = 0;
+    int secondmax = 0;
     std::string username;
+    std::string username_second = "";
     //Retrieve all the bids
     for (int i = 0; i < user_count; i++) {
 	char _value[128];
@@ -280,6 +282,8 @@ std::string retrieveAuctionResult(shim_ctx_ptr_t ctx)
 	result = result.substr(0, length-1);
 	int bid = stoi(result);
 	if (bid>max) {
+		secondmax = max;
+		username_second = username;
 		max = bid;
 		username = usernames[i];
 	}
@@ -290,7 +294,7 @@ std::string retrieveAuctionResult(shim_ctx_ptr_t ctx)
 
     //int signed_value = sign(encrypted_value);
 
-    return username;
+    return username_second;
 }
 
 // implements chaincode logic for invoke

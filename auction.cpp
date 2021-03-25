@@ -3,6 +3,7 @@
 #include "logging.h"
 #include <string>
 #include <ctime>
+#include <cstring>
 #include <stdio.h>
 #include <cstdlib>
 #include <math.h>
@@ -22,6 +23,19 @@ std::map<int, std::string> usernames;
 std::map<std::string, std::string> userPublicKeys;
 void *chaincode_public_key = NULL;
 void *chaincode_private_key = NULL;
+unsigned char *user_encrypted_data;
+std::string testVariable;
+
+std::string putTestVariable(std::string a, shim_ctx_ptr_t ctx)
+{
+	testVariable = a;
+	return testVariable;
+}
+
+std::string getTestVariable(shim_ctx_ptr_t ctx)
+{
+        return testVariable;
+}
 
 //Will store the public key and return private key for user
 std::string  createUserPublicPrivateKey(std::string user_name, shim_ctx_ptr_t ctx)	
@@ -47,9 +61,16 @@ std::string  createUserPublicPrivateKey(std::string user_name, shim_ctx_ptr_t ct
 		s = s + "Reached Private Key phase";
 	}
 	
-	userPublicKeys[user_name] = public_key;
-	
-	return private_key;
+	std::string *pk = static_cast<std::string*>(public_key);
+	std::string pubKey = *pk;
+	userPublicKeys[user_name] = pubKey;
+	delete pk;
+
+	std::string *privk = static_cast<std::string*>(private_key);
+        std::string privKey = *privk;
+        delete privk;
+
+	return privKey;
 }
 
 // To be called once at the beginning. Creates chaincode public private key.
@@ -71,12 +92,17 @@ std::string  createChaincodePublicPrivateKey(shim_ctx_ptr_t ctx)
 	if(sgx_create_rsa_priv2_key(RSA_MOD_SIZE, sizeof(p_e), (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp, &chaincode_private_key) == SGX_SUCCESS) {
 		s = s + "Reached Private Key phase";
 	}
+	return s;
 }
 
 // To be called to retrieve the chaincode public key
 std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)	
 {
-	return chaincode_public_key;
+	std::string *pk = static_cast<std::string*>(chaincode_public_key);
+        std::string pubKey = *pk;
+        delete pk;
+
+	return pubKey;
 }
 
 
@@ -139,34 +165,68 @@ std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
 }
 
 std::string decryptAndStoreBid(std::string user_name, std::string pin_data, shim_ctx_ptr_t ctx) {
+	//char data[pin_data.length()];
+
+	//int i;
+        //for (i = 0; i < sizeof(data); i++) {
+        //        data[i] = pin_data[i];
+        //}
+	//unsigned char* encrypted_data = reinterpret_cast<unsigned char*>(data);
+	
 	size_t decrypted_len = 0;
 
-	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, NULL, &decrypted_len, pout_data, sizeof(pout_data)) == SGX_SUCCESS) {
+	std::string s = "Test";
+
+	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, NULL, &decrypted_len, user_encrypted_data, sizeof(user_encrypted_data)) == SGX_SUCCESS) {
 		s = s + "Decrypted";
 	}
 
 	unsigned char decrypted_pout_data[decrypted_len];
 
-	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, decrypted_pout_data, &decrypted_len, pout_data, sizeof(pout_data)) == SGX_SUCCESS) {
-                s = s + "Decrypted Part 2";
-        }
+	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, decrypted_pout_data, &decrypted_len, user_encrypted_data, sizeof(user_encrypted_data)) == SGX_SUCCESS) {
+        	s = s + "Decrypted Part 2";
+	}
 	
-	put_state(user_name.c_str(), (uint8_t*)&decrypted_pout_data, sizeof(decrypted_pout_data), ctx);
+	//put_state(user_name.c_str(), (uint8_t*)&decrypted_pout_data, sizeof(decrypted_pout_data), ctx);
+	int c = 0;
+        while(decrypted_pout_data[c] != NULL) {
+                s.append(1, decrypted_pout_data[c]);
+                ++c;
+	}
+	return s;
 }
 
 // Function to encrypt the bid for the user
 std::string encrypter(std::string pin_data, shim_ctx_ptr_t ctx) {
-	
-	if(sgx_rsa_pub_encrypt_sha256(chaincode_public_key, NULL, &pout_len, (unsigned char *)pin_data, strlen(pin_data)) == SGX_SUCCESS) {
-		
+
+	char data_to_encrypt[pin_data.length()];
+
+	int i;
+	for (i = 0; i < sizeof(data_to_encrypt); i++) {
+        	data_to_encrypt[i] = pin_data[i];
+    	}
+	size_t pout_len = 0;
+
+	std::string s = "Test";
+
+	if(sgx_rsa_pub_encrypt_sha256(chaincode_public_key, NULL, &pout_len, (unsigned char *)data_to_encrypt, strlen(data_to_encrypt)) == SGX_SUCCESS) {
+		s = s + "Encrypted";
 	}
 
 	unsigned char pout_data[pout_len];
 	
-        if(sgx_rsa_pub_encrypt_sha256(chaincode_public_key, pout_data, &pout_len, (unsigned char *)pin_data, strlen(pin_data)) == SGX_SUCCESS) {
-                
+        if(sgx_rsa_pub_encrypt_sha256(chaincode_public_key, pout_data, &pout_len, (unsigned char *)data_to_encrypt, strlen(data_to_encrypt)) == SGX_SUCCESS) {
+                s = s + "Encrypted Part 2";
         }
-	return pout_data
+
+	user_encrypted_data = new unsigned char [pout_len];
+	memcpy(user_encrypted_data, pout_data, pout_len);
+	int c = 0;
+        while(pout_data[c] != NULL) {
+                s.append(1, pout_data[c]);
+                ++c;
+        }
+	return s;
 }
 
 
@@ -207,11 +267,11 @@ std::string retrieveAuctionResult(shim_ctx_ptr_t ctx)
     }
 
     //Encrypt the max value
-    int encrypted_value = encrypter(max, username, ctx);
+    //int encrypted_value = encrypter(max, username, ctx);
 
-    int signed_value = sign(encrypted_value);
+    //int signed_value = sign(encrypted_value);
 
-    return std::to_string(signed_value);
+    return result;
 }
 
 // implements chaincode logic for invoke
@@ -228,7 +288,16 @@ int invoke(
     get_func_and_params(function_name, params, ctx);
     std::string result;
 
-    if (function_name == "createUserPublicPrivateKey")
+    if (function_name == "putTestVariable")
+    {
+	    std::string user_name = params[0];
+	    result = putTestVariable(user_name, ctx);
+    } 
+    else if (function_name == "getTestVariable")
+    {
+            result = getTestVariable(ctx);
+    }
+    else if (function_name == "createUserPublicPrivateKey")
     {
 	    std::string user_name = params[0];
 	    result = createUserPublicPrivateKey(user_name, ctx);

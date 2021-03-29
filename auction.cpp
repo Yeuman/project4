@@ -105,6 +105,37 @@ std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)
 	return pubKey;
 }
 
+//Example signing simulation
+std::string signingSimulation(shim_ctx_ptr_t ctx)
+{
+	unsigned char p_n[384], p_d[384], p_p[384], p_q[384], p_dmp1[384], p_dmq1[384], p_iqmp[384];
+	long p_e = 65537;
+	sgx_rsa3072_signature_t p_signature[384];
+
+	std::string str = "Hello, world";
+
+	//uint8_t* p_data = reinterpret_cast<uint8_t*>(str.c_str());
+
+	const uint8_t p_data[] = "Hello world";
+
+	std::string s = "Test";
+	if (sgx_create_rsa_key_pair(384, sizeof(p_e), p_n, p_d, (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp) == SGX_SUCCESS){
+                s = s + "Created key pair";
+        }
+
+	sgx_rsa3072_key_t rsa_key;
+	memcpy(&(rsa_key.mod), &(p_n), sizeof(rsa_key.mod));
+	memcpy(&(rsa_key.d), &(p_d), sizeof(rsa_key.d));
+	memcpy(&(rsa_key.e), &(p_e), sizeof(rsa_key.e));
+
+	if (sgx_rsa3072_sign(p_data, sizeof(p_data), &rsa_key, p_signature) == SGX_SUCCESS) {
+		s = s + "Signed data";
+	}
+
+	sgx_rsa3072_public_key_t temp_public_key;
+
+	return s;
+}
 
 //Example encryption simulation
 std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
@@ -356,6 +387,10 @@ int invoke(
     else if (function_name == "retrieveAuctionResult")
     {
         result = retrieveAuctionResult(ctx);
+    }
+    else if (function_name == "signingSimulation")
+    {
+	result = signingSimulation(ctx);
     }
     else
     {

@@ -133,6 +133,35 @@ std::string signingSimulation(shim_ctx_ptr_t ctx)
 	}
 
 	sgx_rsa3072_public_key_t temp_public_key;
+	memcpy(&(temp_public_key.mod), &(p_n), sizeof(temp_public_key.mod));
+	memcpy(&(temp_public_key.exp), &(p_e), sizeof(temp_public_key.exp));
+	
+	sgx_rsa_result_t verify_result = SGX_RSA_INVALID_SIGNATURE;
+	
+	if (sgx_rsa3072_verify(p_data, sizeof(p_data), &temp_public_key, p_signature, &verify_result) == SGX_SUCCESS){
+		s = s + "Verified signature";	
+	}
+	
+	if (sgx_rsa3072_verify(p_data, sizeof(p_data), &temp_public_key, p_signature, &verify_result) == SGX_ERROR_INVALID_PARAMETER){
+		s = s + "error invalid parameter";	
+	}
+	
+	if (sgx_rsa3072_verify(p_data, sizeof(p_data), &temp_public_key, p_signature, &verify_result) == SGX_RSA_INVALID_SIGNATURE){
+		s = s + "error invalid signature";	
+	}
+	
+	if (sgx_rsa3072_verify(p_data, sizeof(p_data), &temp_public_key, p_signature, &verify_result) == SGX_ERROR_OUT_OF_MEMORY){
+		s = s + "error out of memory";	
+	}
+	
+	if (sgx_rsa3072_verify(p_data, sizeof(p_data), &temp_public_key, p_signature, &verify_result) == SGX_ERROR_UNEXPECTED){
+		s = s + "error unexpected";	
+	}
+	
+	if (verify_result != SGX_RSA_VALID)
+    	{
+        	s = s + "Invalid Result";
+    	}
 
 	return s;
 }

@@ -136,6 +136,42 @@ std::string  createChaincodePublicPrivateKey(shim_ctx_ptr_t ctx)
 		s = s + "Reached Private Key phase";
 	}
 
+	char *pp = reinterpret_cast<char*>(p_p);
+	char *pq = reinterpret_cast<char*>(p_q);
+	char *pn = reinterpret_cast<char*>(p_n);
+
+
+	int c = 0;
+	s = s + "This is p_n";
+        while(c < 384) {
+                s.append(1, pn[c]);
+                ++c;
+        }
+
+	c = 0;
+        s = s + "This is p_p";
+        while(c < 384) {
+                s.append(1, pp[c]);
+                ++c;
+        }
+
+	c = 0;
+        s = s + "This is p_q";
+        while(c < 384) {
+                s.append(1, pq[c]);
+                ++c;
+        }
+
+
+	s = s+ "This is p_d";
+	c = 0;
+        while(c < 384) {
+                s.append(1, p_d[c]);
+                ++c;
+        }
+	s = s+ "This is p_e";
+	s = s + std::to_string(p_e);
+
 
 	return s;
 }
@@ -146,6 +182,11 @@ std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)
         std::string pubKey = "";
 	char* pChar;
 	pChar = (char*)chaincode_public_key;
+	pubKey = pubKey + *pChar;
+	while (*pChar != NULL) {
+		pubKey = pubKey + *pChar;
+		pChar++;
+	}
 	std::string someString(pChar);
 	pubKey = pubKey + someString;
 

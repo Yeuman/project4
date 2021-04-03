@@ -14,7 +14,7 @@
 
 #define OK "OK"
 #define NOT_FOUND "Bid not found"
-#define RSA_MOD_SIZE 256 //hardcode n size to be 384
+#define RSA_MOD_SIZE 384 //hardcode n size to be 384
 #define RSA_E_SIZE 4 //hardcode e size to be 4
 
 #define MAX_VALUE_SIZE 1024
@@ -32,8 +32,9 @@ std::map<std::string, void*> userPublicKeys;
 std::map<std::string, sgx_rsa3072_key_t> userSigningPrivateKeys;
 std::map<std::string, sgx_rsa3072_public_key_t> userSigningPublicKeys;
 sgx_rsa3072_signature_t cache_signature[384];
-
+unsigned char *user_encrypted_data;
 const uint8_t *cache_signed_data;
+size_t cache_data_len = 0;
 
 std::string putTestVariable(std::string a, shim_ctx_ptr_t ctx)
 {
@@ -55,7 +56,7 @@ std::string  createUserPublicPrivateKey(std::string user_name, shim_ctx_ptr_t ct
 	void *public_key = NULL;
 	void *private_key = NULL;
 	
-	unsigned char p_n[256], p_d[256], p_p[256], p_q[256], p_dmp1[256], p_dmq1[256], p_iqmp[256]; 
+	unsigned char p_n[384], p_d[384], p_p[384], p_q[384], p_dmp1[384], p_dmq1[384], p_iqmp[384]; 
 	long p_e = 65537;
 
 	std::string s = "Test";
@@ -63,6 +64,25 @@ std::string  createUserPublicPrivateKey(std::string user_name, shim_ctx_ptr_t ct
 	if (sgx_create_rsa_key_pair(RSA_MOD_SIZE, sizeof(p_e), p_n, p_d, (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp) == SGX_SUCCESS){ 
 		s = s + "Created key pair";
 	}
+	sgx_rsa3072_key_t rsa_key;
+	unsigned char temp_n[384], temp_d[384];
+	long temp_e;
+	for(int i = 0; i<384; i++) {
+		temp_n[i] = p_n[i];
+		temp_d[i] = p_d[i];
+	}
+	temp_e = p_e;
+        memcpy(&(rsa_key.mod), &(temp_n), sizeof(rsa_key.mod));
+        memcpy(&(rsa_key.d), &(temp_d), sizeof(rsa_key.d));
+        memcpy(&(rsa_key.e), &(temp_e), sizeof(rsa_key.e));
+
+        sgx_rsa3072_public_key_t temp_public_key;
+
+        memcpy(&(temp_public_key.mod), &(temp_n), sizeof(temp_public_key.mod));
+        memcpy(&(temp_public_key.exp), &(temp_e), sizeof(temp_public_key.exp));
+
+        userSigningPrivateKeys[user_name] = rsa_key;
+        userSigningPublicKeys[user_name] = temp_public_key;
 
 	if(sgx_create_rsa_pub1_key(RSA_MOD_SIZE, sizeof(p_e), p_n, (unsigned char*)&p_e, &public_key) == SGX_SUCCESS) {
 		s = s + "Reached Public Key phase";
@@ -75,61 +95,16 @@ std::string  createUserPublicPrivateKey(std::string user_name, shim_ctx_ptr_t ct
 	userPublicKeys[user_name] = public_key;
 	userPrivateKeys[user_name] = private_key;
 
-	return s;
-}
-
-std::string createUserPublicPrivateSigningKey(std::string user_name, shim_ctx_ptr_t ctx)
-{
-	unsigned char p_n[384], p_d[384], p_p[384], p_q[384], p_dmp1[384], p_dmq1[384], p_iqmp[384];
-        long p_e = 65537;
-
-	std::string s = "Test";
-        if (sgx_create_rsa_key_pair(384, sizeof(p_e), p_n, p_d, (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp) == SGX_SUCCESS){
-                s = s + "Created key pair";
-        }
-
-        sgx_rsa3072_key_t rsa_key;
-        memcpy(&(rsa_key.mod), &(p_n), sizeof(rsa_key.mod));
-        memcpy(&(rsa_key.d), &(p_d), sizeof(rsa_key.d));
-        memcpy(&(rsa_key.e), &(p_e), sizeof(rsa_key.e));
-
-	sgx_rsa3072_public_key_t temp_public_key;
-
-        memcpy(&(temp_public_key.mod), &(p_n), sizeof(temp_public_key.mod));
-        memcpy(&(temp_public_key.exp), &(p_e), sizeof(temp_public_key.exp));
-
-	userSigningPrivateKeys[user_name] = rsa_key;
-	userSigningPublicKeys[user_name] = temp_public_key;
-
-	return s;
-}
-
-
-std::string createChaincodePublicPrivateSigningKey(shim_ctx_ptr_t ctx) {
-
-	unsigned char p_n[384], p_d[384], p_p[384], p_q[384], p_dmp1[384], p_dmq1[384], p_iqmp[384];
-        long p_e = 65537;
-        
-	std::string s = "Test";
-        if (sgx_create_rsa_key_pair(384, sizeof(p_e), p_n, p_d, (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp) == SGX_SUCCESS){
-                s = s + "Created key pair";
-        }
-
-        memcpy(&(chaincode_signing_private_key.mod), &(p_n), sizeof(chaincode_signing_private_key.mod));
-        memcpy(&(chaincode_signing_private_key.d), &(p_d), sizeof(chaincode_signing_private_key.d));
-        memcpy(&(chaincode_signing_private_key.e), &(p_e), sizeof(chaincode_signing_private_key.e));
-
-        memcpy(&(chaincode_signing_public_key.mod), &(p_n), sizeof(chaincode_signing_public_key.mod));
-        memcpy(&(chaincode_signing_public_key.exp), &(p_e), sizeof(chaincode_signing_public_key.exp));
 
 
 	return s;
 }
+
 
 // To be called once at the beginning. Creates chaincode public private key.
 std::string  createChaincodePublicPrivateKey(shim_ctx_ptr_t ctx)	
 {
-	unsigned char p_n[256], p_d[256], p_p[256], p_q[256], p_dmp1[256], p_dmq1[256], p_iqmp[256]; 
+	unsigned char p_n[384], p_d[384], p_p[384], p_q[384], p_dmp1[384], p_dmq1[384], p_iqmp[384]; 
 	long p_e = 65537;
 
 	std::string s = "Test";
@@ -138,6 +113,21 @@ std::string  createChaincodePublicPrivateKey(shim_ctx_ptr_t ctx)
 		s = s + "Created key pair";
 	}
 
+	unsigned char temp_n[384], temp_d[384];
+        long temp_e;
+        for(int i = 0; i<384; i++) {
+                temp_n[i] = p_n[i];
+                temp_d[i] = p_d[i];
+        }
+        temp_e = p_e;
+
+	memcpy(&(chaincode_signing_private_key.mod), &(temp_n), sizeof(chaincode_signing_private_key.mod));
+        memcpy(&(chaincode_signing_private_key.d), &(temp_d), sizeof(chaincode_signing_private_key.d));
+        memcpy(&(chaincode_signing_private_key.e), &(temp_e), sizeof(chaincode_signing_private_key.e));
+
+        memcpy(&(chaincode_signing_public_key.mod), &(temp_n), sizeof(chaincode_signing_public_key.mod));
+        memcpy(&(chaincode_signing_public_key.exp), &(temp_e), sizeof(chaincode_signing_public_key.exp));
+
 	if(sgx_create_rsa_pub1_key(RSA_MOD_SIZE, sizeof(p_e), p_n, (unsigned char*)&p_e, &chaincode_public_key) == SGX_SUCCESS) {
 		s = s + "Reached Public Key phase";
 	}
@@ -145,16 +135,28 @@ std::string  createChaincodePublicPrivateKey(shim_ctx_ptr_t ctx)
 	if(sgx_create_rsa_priv2_key(RSA_MOD_SIZE, sizeof(p_e), (unsigned char*)&p_e, p_p, p_q, p_dmp1, p_dmq1, p_iqmp, &chaincode_private_key) == SGX_SUCCESS) {
 		s = s + "Reached Private Key phase";
 	}
+
+
 	return s;
 }
 
 // To be called to retrieve the chaincode public key
 std::string  retrieveChaincodePublicKey(shim_ctx_ptr_t ctx)	
 {
-	std::string *pk = static_cast<std::string*>(chaincode_public_key);
-        std::string pubKey = *pk;
-        delete pk;
+        std::string pubKey = "";
+	char* pChar;
+	pChar = (char*)chaincode_public_key;
+	std::string someString(pChar);
+	pubKey = pubKey + someString;
 
+	std::string pk_string(*(const char*)chaincode_public_key, 1000);
+	pubKey = pubKey + pk_string;
+
+	int c = 0;
+        while(pChar[c] != NULL) {
+               	pubKey.append(1, pChar[c]);
+		++c;
+        }
 	return pubKey;
 }
 
@@ -211,7 +213,7 @@ std::string  encryptionSimulation(shim_ctx_ptr_t ctx)
 	void *public_key = NULL;
 	void *private_key = NULL;
 	
-	unsigned char p_n[256], p_d[256], p_p[256], p_q[256], p_dmp1[256], p_dmq1[256], p_iqmp[256]; 
+	unsigned char p_n[384], p_d[384], p_p[384], p_q[384], p_dmp1[384], p_dmq1[384], p_iqmp[384]; 
 	long p_e = 65537;
 
 	std::string s = "Test";
@@ -275,7 +277,8 @@ std::string verifyDecryptAndStoreBid(std::string user_name, std::string pin_data
 
 	sgx_rsa3072_public_key_t temp_public_key;
 	temp_public_key	= userSigningPublicKeys[user_name];
-	const unsigned char *user_encrypted_data = (unsigned char*)cache_signed_data;
+	unsigned char *encrypted_data;
+	encrypted_data = new unsigned char [cache_data_len];
 
 
         if (sgx_rsa3072_verify(cache_signed_data, sizeof(cache_signed_data), &temp_public_key, cache_signature, &verify_result) == SGX_SUCCESS){
@@ -285,19 +288,20 @@ std::string verifyDecryptAndStoreBid(std::string user_name, std::string pin_data
         if (verify_result == SGX_RSA_VALID)
         {
                 s = s + "Valid Result";
-		user_encrypted_data = (unsigned char*)cache_signed_data;
+		unsigned char *data = (unsigned char*)cache_signed_data;
+		memcpy(encrypted_data, data, cache_data_len);
         } else {
 		return "Invalid Signature Not Trusted Data";
 	}
 	
 
-	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, NULL, &decrypted_len, user_encrypted_data, sizeof(user_encrypted_data)) == SGX_SUCCESS) {
+	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, NULL, &decrypted_len, encrypted_data, sizeof(encrypted_data)) == SGX_SUCCESS) {
 		s = s + "Decrypted";
 	}
 
 	unsigned char decrypted_pout_data[decrypted_len];
 
-	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, decrypted_pout_data, &decrypted_len, user_encrypted_data, sizeof(user_encrypted_data)) == SGX_SUCCESS) {
+	if(sgx_rsa_priv_decrypt_sha256(chaincode_private_key, decrypted_pout_data, &decrypted_len, encrypted_data, sizeof(encrypted_data)) == SGX_SUCCESS) {
         	s = s + "Decrypted Part 2";
 	}
 	
@@ -351,7 +355,10 @@ std::string encryptAndSign(std::string pin_data, std::string user_name, shim_ctx
 	sgx_rsa3072_key_t rsa_key;
 	rsa_key = userSigningPrivateKeys[user_name];
 
-	cache_signed_data = (uint8_t*)pout_data;
+	user_encrypted_data = new unsigned char [pout_len];
+	memcpy(user_encrypted_data, pout_data, pout_len);
+	cache_signed_data = (uint8_t*)user_encrypted_data;
+	cache_data_len = pout_len;
 
 	if (sgx_rsa3072_sign(cache_signed_data, sizeof(cache_signed_data), &rsa_key, cache_signature) == SGX_SUCCESS) {
                 s = s + "Signed data";
@@ -506,15 +513,6 @@ int invoke(
 	std::string value = params[1];
         std::string user_name = params[0];
         result = verifyDecryptAndReadResult(user_name, value, ctx);
-    }
-    else if (function_name == "createUserPublicPrivateSigningKey")
-    {
-	std::string user_name = params[0];
-	result = createUserPublicPrivateSigningKey(user_name, ctx);
-    }
-    else if (function_name == "createChaincodePublicPrivateSigningKey")
-    {
-	result = createChaincodePublicPrivateSigningKey(ctx);
     }
     else
     {
